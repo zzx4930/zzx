@@ -1,35 +1,71 @@
-// 定义LED引脚（ESP32开发板一般用D2引脚，也可以用其他数字引脚）
-const int ledPin = 2;
+const int ledPin = 13;
+unsigned long previousMillis = 0;
+int sosState = 0; // 状态机的步骤，0-8对应SOS的每个阶段
+const long shortOn = 200;
+const long longOn = 600;
+const long gap = 200;
+const long sosPause = 2000;
 
 void setup() {
-  pinMode(ledPin, OUTPUT); // 设置引脚为输出模式
+  pinMode(ledPin, OUTPUT);
 }
 
 void loop() {
-  // S：短闪3次
-  for(int i=0; i<3; i++) {
-    digitalWrite(ledPin, HIGH);
-    delay(200);
-    digitalWrite(ledPin, LOW);
-    delay(200);
-  }
-  delay(500); // 字母间隔
+  unsigned long currentMillis = millis();
 
-  // O：长闪3次
-  for(int i=0; i<3; i++) {
-    digitalWrite(ledPin, HIGH);
-    delay(600);
-    digitalWrite(ledPin, LOW);
-    delay(200);
+  switch(sosState) {
+    // 前三次短闪（S）
+    case 0: case 2: case 4: // 亮的状态
+      digitalWrite(ledPin, HIGH);
+      if(currentMillis - previousMillis >= shortOn) {
+        previousMillis = currentMillis;
+        sosState++;
+      }
+      break;
+    case 1: case 3: case 5: // 灭的状态
+      digitalWrite(ledPin, LOW);
+      if(currentMillis - previousMillis >= gap) {
+        previousMillis = currentMillis;
+        sosState++;
+      }
+      break;
+    // 中间三次长闪（O）
+    case 6: case 8: case 10: // 亮的状态
+      digitalWrite(ledPin, HIGH);
+      if(currentMillis - previousMillis >= longOn) {
+        previousMillis = currentMillis;
+        sosState++;
+      }
+      break;
+    case 7: case 9: case 11: // 灭的状态
+      digitalWrite(ledPin, LOW);
+      if(currentMillis - previousMillis >= gap) {
+        previousMillis = currentMillis;
+        sosState++;
+      }
+      break;
+    // 后三次短闪（S）
+    case 12: case 14: case 16: // 亮的状态
+      digitalWrite(ledPin, HIGH);
+      if(currentMillis - previousMillis >= shortOn) {
+        previousMillis = currentMillis;
+        sosState++;
+      }
+      break;
+    case 13: case 15: case 17: // 灭的状态
+      digitalWrite(ledPin, LOW);
+      if(currentMillis - previousMillis >= gap) {
+        previousMillis = currentMillis;
+        sosState++;
+      }
+      break;
+    // SOS结束，长时间停顿
+    case 18:
+      digitalWrite(ledPin, LOW);
+      if(currentMillis - previousMillis >= sosPause) {
+        previousMillis = currentMillis;
+        sosState = 0; // 回到开头，重复SOS
+      }
+      break;
   }
-  delay(500); // 字母间隔
-
-  // S：短闪3次
-  for(int i=0; i<3; i++) {
-    digitalWrite(ledPin, HIGH);
-    delay(200);
-    digitalWrite(ledPin, LOW);
-    delay(200);
-  }
-  delay(2000); // SOS结束后的停顿
 }
